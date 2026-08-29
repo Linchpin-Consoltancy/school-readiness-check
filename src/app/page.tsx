@@ -1,69 +1,73 @@
-import Image from "next/image";
+import { PageShell } from "@/components/PageShell";
+import { RegistrationForm } from "@/components/RegistrationForm";
 
-export default function Home() {
+const FACTS = [
+  { value: "42", label: "Questions" },
+  { value: "7", label: "Domains" },
+  { value: "25", label: "Minutes" },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <PageShell eyebrow="Self-Assessment">
+      <div className="mx-auto w-full max-w-6xl px-6 py-14 lg:py-24">
+        <div className="grid items-start gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:gap-20">
+          <div className="lg:sticky lg:top-28">
+            <p className="text-[0.68rem] font-medium uppercase tracking-[0.26em] text-amber">
+              Linchpin Education
+            </p>
+
+            <h1 className="mt-6 font-display text-[2.6rem] leading-[1.06] font-normal text-onyx sm:text-5xl lg:text-[3.4rem]">
+              School Systems Self-Assessment
+            </h1>
+
+            <div aria-hidden className="mt-7 h-px w-14 bg-amber" />
+
+            <p className="mt-7 font-display text-[1.4rem] leading-snug text-dusk sm:text-2xl">
+              A structured diagnostic for school leaders
+            </p>
+
+            <p className="mt-6 max-w-[48ch] text-[0.98rem] leading-[1.75] text-charcoal/85">
+              This assessment helps you take an honest look at the systems
+              running your school. You will answer 42 questions across seven
+              domains of school quality, each examined through three lenses:
+              what your school has designed, what you observe in practice, and
+              what your data tells you. It takes about 25 minutes. At the end
+              you will receive a detailed report.
+            </p>
+
+            <dl className="mt-12 grid max-w-md grid-cols-3 border-t border-onyx/10">
+              {FACTS.map((fact) => (
+                <div key={fact.label} className="pt-5">
+                  <dt className="sr-only">{fact.label}</dt>
+                  <dd>
+                    <span className="block font-display text-3xl leading-none text-onyx">
+                      {fact.value}
+                    </span>
+                    <span className="mt-2 block text-[0.65rem] uppercase tracking-[0.2em] text-dusk">
+                      {fact.label}
+                    </span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          <div className="rounded-[4px] border border-onyx/10 bg-ivory p-7 shadow-[0_1px_3px_rgba(27,48,64,0.05),0_12px_36px_-18px_rgba(27,48,64,0.28)] sm:p-9">
+            <h2 className="font-display text-[1.7rem] leading-tight text-onyx">
+              Begin your assessment
+            </h2>
+            <p className="mt-3 text-[0.85rem] leading-relaxed text-dusk">
+              A few details about you and your school. These appear on your
+              report and let us send it where it needs to go.
+            </p>
+
+            <div aria-hidden className="my-7 h-px bg-onyx/10" />
+
+            <RegistrationForm />
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </PageShell>
   );
 }

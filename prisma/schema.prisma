@@ -1,0 +1,55 @@
+// Linchpin School Systems Self-Assessment
+// Local development uses SQLite. Production uses Postgres (Neon).
+// Only portable column types are used here so the provider swap is a one-line change.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// One principal's assessment session. The id doubles as the private
+/// resume link token, so it is generated with cryptographic randomness.
+model Assessment {
+  id String @id
+
+  // School profile, captured at registration.
+  fullName   String
+  email      String
+  schoolName String
+  schoolType String
+  enrolment  String
+  region     String?
+
+  // Lifecycle. Stored as a string rather than an enum so that SQLite and
+  // Postgres behave identically.
+  status      String    @default("in_progress")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  responses Response[]
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+/// A single question rating, 1 to 4. Questions are addressed by a stable
+/// code such as D01-A-1 (domain 01, lens A, question 1).
+model Response {
+  id           String @id @default(cuid())
+  assessmentId String
+  questionId   String
+  rating       Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, questionId])
+  @@index([assessmentId])
+}
