@@ -38,6 +38,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Cormorant Garamond sets numerals at varying heights by default, which makes
+   a lone "1" read like a capital I. Lining figures keep every digit the same
+   height, which matters wherever a rating or a score is read at a glance. */
+.font-display {
+  font-variant-numeric: lining-nums;
+}
+
 /* Native select arrow removed in favour of one that matches the palette. */
 .select-field {
   appearance: none;

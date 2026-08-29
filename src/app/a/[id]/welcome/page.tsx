@@ -2,47 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
 import { prisma } from "@/lib/prisma";
-
-const LENSES = [
-  {
-    letter: "A",
-    title: "Intent and Design",
-    body: "What your school has deliberately put in place. The policies, structures, timetables and systems that exist by design rather than by accident.",
-  },
-  {
-    letter: "B",
-    title: "Observable Practice",
-    body: "What you actually witness happening. Not what the policy document says, but what you see when you walk into classrooms and along corridors.",
-  },
-  {
-    letter: "C",
-    title: "Data and Outcomes",
-    body: "What your evidence tells you. The results, records, surveys and patterns that show whether the intent is landing where it matters.",
-  },
-];
-
-const SCALE = [
-  {
-    value: "1",
-    name: "Beginning",
-    body: "This is not in place or is at a very early stage.",
-  },
-  {
-    value: "2",
-    name: "Developing",
-    body: "This exists but is inconsistent or partial.",
-  },
-  {
-    value: "3",
-    name: "Established",
-    body: "This is in place and functioning reliably.",
-  },
-  {
-    value: "4",
-    name: "Exemplary",
-    body: "This is a strength. It is embedded, consistent, and improving.",
-  },
-];
+import { LENS_DEFINITIONS, RATING_SCALE } from "@/content/assessment";
 
 const PREPARATION = [
   "Set aside about 25 minutes somewhere you will not be interrupted.",
@@ -99,23 +59,26 @@ export default async function WelcomePage({
           </p>
 
           <ul className="mt-9 border-t border-onyx/10">
-            {LENSES.map((lens) => (
+            {(["A", "B", "C"] as const).map((letter) => (
               <li
-                key={lens.letter}
+                key={letter}
                 className="flex gap-6 border-b border-onyx/10 py-7 sm:gap-9"
               >
                 <span
                   aria-hidden
                   className="w-8 shrink-0 font-display text-[2.1rem] leading-none text-amber"
                 >
-                  {lens.letter}
+                  {letter}
                 </span>
                 <div>
                   <h3 className="text-[0.72rem] font-medium uppercase tracking-[0.18em] text-onyx">
-                    Lens {lens.letter}: {lens.title}
+                    Lens {letter}: {LENS_DEFINITIONS[letter].name}
                   </h3>
+                  <p className="mt-2.5 font-display text-[1.15rem] leading-snug text-dusk">
+                    {LENS_DEFINITIONS[letter].guidingQuestion}
+                  </p>
                   <p className="mt-2.5 text-[0.94rem] leading-[1.7] text-charcoal/80">
-                    {lens.body}
+                    {LENS_DEFINITIONS[letter].description}
                   </p>
                 </div>
               </li>
@@ -133,7 +96,7 @@ export default async function WelcomePage({
           </p>
 
           <ul className="mt-9 border-t border-onyx/10">
-            {SCALE.map((step) => (
+            {RATING_SCALE.map((step) => (
               <li
                 key={step.value}
                 className="flex gap-6 border-b border-onyx/10 py-6 sm:gap-9"
@@ -149,7 +112,7 @@ export default async function WelcomePage({
                     {step.value} = {step.name}
                   </h3>
                   <p className="mt-1.5 text-[0.94rem] leading-[1.7] text-charcoal/80">
-                    {step.body}
+                    {step.description}
                   </p>
                 </div>
               </li>

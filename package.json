@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "verify": "tsx scripts/verify.ts",
+    "scores": "tsx scripts/scores.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -25,6 +27,7 @@
     "eslint-config-next": "16.3.3",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

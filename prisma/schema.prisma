@@ -37,13 +37,18 @@ model Assessment {
   @@index([createdAt])
 }
 
-/// A single question rating, 1 to 4. Questions are addressed by a stable
-/// code such as D01-A-1 (domain 01, lens A, question 1).
+/// A single answer. Questions are addressed by the code used in the content
+/// file, such as A1.1 (lens A, domain 1, question 1).
+///
+/// Both fields are optional because a row is created the moment a principal
+/// touches a question. Someone may type a note before choosing a rating, and
+/// a rating of nothing must be distinguishable from a rating of one.
 model Response {
-  id           String @id @default(cuid())
+  id           String  @id @default(cuid())
   assessmentId String
   questionId   String
-  rating       Int
+  rating       Int?
+  note         String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
