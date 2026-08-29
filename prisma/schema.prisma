@@ -31,7 +31,8 @@ model Assessment {
   updatedAt   DateTime  @updatedAt
   completedAt DateTime?
 
-  responses Response[]
+  responses    Response[]
+  domainScores DomainScore[]
 
   @@index([email])
   @@index([createdAt])
@@ -56,5 +57,40 @@ model Response {
   assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 
   @@unique([assessmentId, questionId])
+  @@index([assessmentId])
+}
+
+/// A calculated result for one domain, written whenever an answer changes.
+///
+/// Scores are stored at full precision. The one decimal place figure the
+/// principal sees is produced at display time, so the stored numbers can
+/// never disagree with a recalculation.
+model DomainScore {
+  id           String @id @default(cuid())
+  assessmentId String
+  domainId     String
+
+  lensAScore Float
+  lensBScore Float
+  lensCScore Float
+
+  /// Full precision, for example 2.1666666666666665.
+  score Float
+
+  /// Tier id: critical, high, moderate or sustain.
+  tier String
+
+  gapFlag Boolean @default(false)
+
+  /// Lens letters that triggered the gap, comma separated, for example "A,C".
+  /// Stored as text because SQLite has no array type and the value is short.
+  gapLenses String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, domainId])
   @@index([assessmentId])
 }

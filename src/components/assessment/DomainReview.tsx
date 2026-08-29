@@ -81,7 +81,7 @@ export function DomainReview({
 
             <div className="mt-4 flex items-baseline gap-4">
               <span className="font-display text-[3.6rem] leading-none text-onyx">
-                {formatScore(result.score as number)}
+                {formatScore(result.displayScore as number)}
               </span>
               <span className="text-[0.72rem] uppercase tracking-[0.16em] text-dusk">
                 Out of 4.0
@@ -101,19 +101,32 @@ export function DomainReview({
             </div>
           </div>
 
-          {result.gapLenses.length > 0 ? (
+          {result.gapFlag ? (
             <div className="mt-6 rounded-[4px] border border-onyx/10 bg-ivory p-7">
               <p className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-onyx">
-                Lens gap noted
+                {result.gapLenses.length === 1 ? "Lens gap noted" : "Lens gaps noted"}
               </p>
-              <p className="mt-3.5 text-[0.92rem] leading-[1.7] text-charcoal/85">
-                {result.gapLenses.length === 1
-                  ? `Lens ${result.gapLenses[0]}, ${
-                      LENS_DEFINITIONS[result.gapLenses[0]].name
-                    }, sits a full point or more below your domain score. Your report will look at why.`
-                  : `Lenses ${result.gapLenses.join(
-                      " and ",
-                    )} sit a full point or more below your domain score. Your report will look at why.`}
+              <ul className="mt-3.5 space-y-2.5">
+                {result.lenses
+                  .filter((lensResult) => lensResult.gap)
+                  .map((lensResult) => (
+                    <li
+                      key={lensResult.lensId}
+                      className="text-[0.92rem] leading-[1.7] text-charcoal/85"
+                    >
+                      Lens {lensResult.lensId},{" "}
+                      {LENS_DEFINITIONS[lensResult.lensId].name}, sits a full
+                      point or more{" "}
+                      {(lensResult.score as number) <
+                      (result.displayScore as number)
+                        ? "below"
+                        : "above"}{" "}
+                      your domain score.
+                    </li>
+                  ))}
+              </ul>
+              <p className="mt-4 text-[0.92rem] leading-[1.7] text-charcoal/85">
+                Your report will look at why.
               </p>
             </div>
           ) : null}

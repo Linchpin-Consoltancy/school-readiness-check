@@ -16,6 +16,8 @@ import {
   TOTAL_SECTIONS,
 } from "../src/content/assessment";
 import {
+  allDomainResults,
+  byPriority,
   domainResult,
   formatScore,
   lensScore,
@@ -191,7 +193,7 @@ const examples: Example[] = [
     lenses: [4, 4, 1],
     domain: 3.0,
     tier: "Moderate Priority",
-    gaps: ["C"],
+    gaps: ["A", "B", "C"],
   },
   {
     label: "mixed, rounds up",
@@ -224,6 +226,26 @@ const examples: Example[] = [
     gaps: [],
   },
   {
+    label: "brief worked example, domain 3",
+    a: [3, 2],
+    b: [3, 2],
+    c: [2, 1],
+    lenses: [2.5, 2.5, 1.5],
+    domain: 2.2,
+    tier: "High Priority",
+    gaps: [],
+  },
+  {
+    label: "one lens above the domain",
+    a: [3, 4],
+    b: [2, 2],
+    c: [2, 2],
+    lenses: [3.5, 2, 2],
+    domain: 2.5,
+    tier: "High Priority",
+    gaps: ["A"],
+  },
+  {
     label: "practice lags design and data",
     a: [4, 4],
     b: [2, 2],
@@ -246,9 +268,14 @@ for (const example of examples) {
     `expected ${JSON.stringify(example.lenses)}, got ${JSON.stringify(actualLenses)}`,
   );
   check(
-    `${example.label}: domain score`,
-    result.score === example.domain,
-    `expected ${example.domain}, got ${result.score}`,
+    `${example.label}: displayed domain score`,
+    result.displayScore === example.domain,
+    `expected ${example.domain}, got ${result.displayScore}`,
+  );
+  check(
+    `${example.label}: stored score rounds to the displayed one`,
+    roundToOneDecimal(result.score as number) === example.domain,
+    `stored ${result.score}`,
   );
   check(
     `${example.label}: tier`,
@@ -392,6 +419,79 @@ const everything: Ratings = Object.fromEntries(
   ALL_QUESTION_IDS.map((id) => [id, 3]),
 );
 check("all answers means 21 sections", sectionsComplete(everything) === 21);
+
+/* -------------------------------------------------------------------------
+   Tier colours
+   ------------------------------------------------------------------------- */
+
+heading("Tier colours");
+
+const EXPECTED_COLOURS: Record<string, string> = {
+  critical: "#C0392B",
+  high: "#C07B2A",
+  moderate: "#4A6A28",
+  sustain: "#2E5A7A",
+};
+
+for (const tier of TIERS) {
+  check(
+    `${tier.label} colour`,
+    tier.color.toUpperCase() === EXPECTED_COLOURS[tier.id],
+    `expected ${EXPECTED_COLOURS[tier.id]}, got ${tier.color}`,
+  );
+  console.log(`  ${tier.label.padEnd(20)} ${tier.color}`);
+}
+
+/* -------------------------------------------------------------------------
+   Full precision is kept, display is rounded
+   ------------------------------------------------------------------------- */
+
+heading("Precision");
+
+const precise = domainResult(domain, ratingsFor([3, 2], [3, 2], [2, 1]));
+check(
+  "stored score keeps full precision",
+  precise.score !== null && precise.score.toFixed(10) === "2.1666666667",
+  `got ${precise.score}`,
+);
+check("display score is rounded", precise.displayScore === 2.2);
+check("formatted score reads 2.2", formatScore(precise.score as number) === "2.2");
+console.log(
+  `  stored ${precise.score}, displayed ${formatScore(precise.score as number)}`,
+);
+
+/* -------------------------------------------------------------------------
+   Dashboard ordering
+   ------------------------------------------------------------------------- */
+
+heading("Dashboard ordering");
+
+const spread: Ratings = {};
+const wanted = [3, 1, 2, 4, 3, 2, 3];
+DOMAINS.forEach((eachDomain, index) => {
+  for (const lens of eachDomain.lenses) {
+    for (const question of lens.questions) {
+      spread[question.id] = wanted[index];
+    }
+  }
+});
+
+const orderedResults = byPriority(allDomainResults(spread));
+const orderedScores = orderedResults.map((result) => result.displayScore);
+check(
+  "most urgent domain comes first",
+  orderedScores[0] === 1 && orderedScores[orderedScores.length - 1] === 4,
+  JSON.stringify(orderedScores),
+);
+check(
+  "scores ascend down the table",
+  orderedScores.every(
+    (score, index) =>
+      index === 0 || (score as number) >= (orderedScores[index - 1] as number),
+  ),
+  JSON.stringify(orderedScores),
+);
+console.log(`  order: ${orderedScores.map((s) => (s as number).toFixed(1)).join(", ")}`);
 
 /* ------------------------------------------------------------------------- */
 

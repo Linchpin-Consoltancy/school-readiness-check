@@ -13,12 +13,12 @@
   --color-ivory: #fdfbf8;
   --color-charcoal: #1a1a1a;
 
-  /* Priority tier colours, tuned to sit alongside the core palette rather
-     than shout over it. Used by the results screens and the PDF report. */
-  --color-critical: #a03a2b;
+  /* Priority tier colours. These must match the hex values in
+     src/lib/scoring.ts, which is where the PDF report reads them from. */
+  --color-critical: #c0392b;
   --color-high: #c07b2a;
-  --color-moderate: #3f7a5e;
-  --color-sustain: #2f5f87;
+  --color-moderate: #4a6a28;
+  --color-sustain: #2e5a7a;
 
   --font-display: var(--font-cormorant), Georgia, "Times New Roman", serif;
   --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;

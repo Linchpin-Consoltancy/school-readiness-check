@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:studio": "prisma studio",
     "verify": "tsx scripts/verify.ts",
-    "scores": "tsx scripts/scores.ts"
+    "scores": "tsx scripts/scores.ts",
+    "recalculate": "tsx scripts/recalculate.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

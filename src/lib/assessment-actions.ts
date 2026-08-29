@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { ALL_QUESTION_IDS } from "@/content/assessment";
 import { prisma } from "@/lib/prisma";
+import { refreshResults } from "@/lib/results";
 
 export type SaveResult = { ok: boolean };
 
@@ -45,6 +46,10 @@ export async function saveRating(
   } catch {
     return { ok: false };
   }
+
+  // Scores are recalculated and stored on every answer, so a principal who
+  // stops halfway still leaves usable results for the domains they finished.
+  await refreshResults(assessmentId);
 
   revalidatePath(`/a/${assessmentId}`, "layout");
   return { ok: true };
