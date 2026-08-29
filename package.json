@@ -10,22 +10,26 @@
     "db:studio": "prisma studio",
     "verify": "tsx scripts/verify.ts",
     "scores": "tsx scripts/scores.ts",
-    "recalculate": "tsx scripts/recalculate.ts"
+    "recalculate": "tsx scripts/recalculate.ts",
+    "preview-report": "tsx scripts/preview-report.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@react-pdf/renderer": "^4.9.0",
     "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "^4.5.2"
   },
   "devDependencies": {
+    "@napi-rs/canvas": "^1.0.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
+    "pdfjs-dist": "^6.2.108",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "tsx": "^4.23.12",

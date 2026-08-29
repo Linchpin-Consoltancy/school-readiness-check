@@ -28,6 +28,22 @@ import {
   type Ratings,
 } from "../src/lib/scoring";
 import { STEPS } from "../src/lib/steps";
+import {
+  GAP_DESCRIPTORS,
+  GAP_NOTE,
+  HOW_TO_READ,
+  NEXT_STEPS,
+  PATTERN_VARIANTS,
+  isPlaceholder,
+} from "../src/content/report";
+import {
+  countTiers,
+  lensList,
+  lowestScoringDomain,
+  reportFilename,
+  selectVariant,
+} from "../src/lib/report";
+import type { DomainResult, TierId } from "../src/lib/scoring";
 
 let failures = 0;
 let checks = 0;
@@ -492,6 +508,195 @@ check(
   JSON.stringify(orderedScores),
 );
 console.log(`  order: ${orderedScores.map((s) => (s as number).toFixed(1)).join(", ")}`);
+
+/* -------------------------------------------------------------------------
+   Report content
+   ------------------------------------------------------------------------- */
+
+heading("Report content");
+
+let outstanding = 0;
+let descriptorCount = 0;
+
+for (const eachDomain of DOMAINS) {
+  const set = GAP_DESCRIPTORS[eachDomain.id];
+  check(`${eachDomain.id} has gap descriptors`, Boolean(set));
+  if (!set) continue;
+  for (const tier of TIERS) {
+    descriptorCount += 1;
+    const text = set[tier.id];
+    check(
+      `${eachDomain.id} ${tier.id} descriptor exists`,
+      typeof text === "string" && text.length > 0,
+    );
+    if (isPlaceholder(text)) outstanding += 1;
+  }
+}
+
+check("28 gap descriptors", descriptorCount === 28, `found ${descriptorCount}`);
+check("two How to Read paragraphs", HOW_TO_READ.length === 2);
+check("three next steps", NEXT_STEPS.length === 3);
+check(
+  "next step two names the lowest domain",
+  NEXT_STEPS[1].paragraphs.join(" ").includes("{{DOMAIN}}"),
+);
+check("gap note keeps its tokens", GAP_NOTE.includes("{{LENSES}}"));
+check("three narrative variants", Object.keys(PATTERN_VARIANTS).length === 3);
+
+for (const variant of ["A", "B", "C"] as const) {
+  if (PATTERN_VARIANTS[variant].some(isPlaceholder)) outstanding += 1;
+}
+
+check("lens list reads well for one lens", lensList(["B"]) === "Practice");
+check(
+  "lens list reads well for two lenses",
+  lensList(["A", "C"]) === "Intent and Outcomes",
+);
+check(
+  "lens list reads well for three lenses",
+  lensList(["A", "B", "C"]) === "Intent, Practice and Outcomes",
+);
+
+console.log(`  ${descriptorCount} gap descriptors and 3 variants defined.`);
+console.log(
+  `  ${outstanding} pieces of copy still say "To be supplied" and print greyed out.`,
+);
+
+/* -------------------------------------------------------------------------
+   Narrative variant selection
+   ------------------------------------------------------------------------- */
+
+heading("Narrative variant selection");
+
+function resultsWithTiers(counts: Record<TierId, number>): DomainResult[] {
+  const results: DomainResult[] = [];
+  for (const tier of TIERS) {
+    for (let index = 0; index < counts[tier.id]; index += 1) {
+      results.push({
+        domainId: `D${String(results.length + 1).padStart(2, "0")}`,
+        lenses: [
+          { lensId: "A", score: tier.min, complete: true, gap: false },
+          { lensId: "B", score: tier.min, complete: true, gap: false },
+          { lensId: "C", score: tier.min, complete: true, gap: false },
+        ],
+        score: tier.min,
+        displayScore: tier.min,
+        tier,
+        gapFlag: false,
+        gapLenses: [],
+        complete: true,
+      });
+    }
+  }
+  return results;
+}
+
+check(
+  "two Critical domains give Variant A",
+  selectVariant(
+    resultsWithTiers({ critical: 2, high: 2, moderate: 2, sustain: 1 }),
+  ).id === "A",
+);
+check(
+  "one Critical with four High gives Variant B",
+  selectVariant(
+    resultsWithTiers({ critical: 1, high: 4, moderate: 0, sustain: 2 }),
+  ).id === "B",
+);
+check(
+  "a settled school gives Variant C",
+  selectVariant(
+    resultsWithTiers({ critical: 0, high: 1, moderate: 2, sustain: 4 }),
+  ).id === "C",
+);
+check(
+  "Variant B wins when B and C both apply",
+  selectVariant(
+    resultsWithTiers({ critical: 0, high: 0, moderate: 5, sustain: 2 }),
+  ).id === "B",
+);
+
+// Every way seven domains can fall across four tiers.
+let spreads = 0;
+const chosen: Record<string, number> = { A: 0, B: 0, C: 0 };
+const fallbacks: string[] = [];
+
+for (let critical = 0; critical <= 7; critical += 1)
+  for (let high = 0; high <= 7 - critical; high += 1)
+    for (let moderate = 0; moderate <= 7 - critical - high; moderate += 1) {
+      const sustain = 7 - critical - high - moderate;
+      spreads += 1;
+      const counts = { critical, high, moderate, sustain };
+      const choice = selectVariant(resultsWithTiers(counts));
+      chosen[choice.id] += 1;
+      if (choice.fellBack) {
+        fallbacks.push(`${critical}C ${high}H ${moderate}M ${sustain}S`);
+      }
+    }
+
+check("120 possible spreads", spreads === 120, `found ${spreads}`);
+check(
+  "every spread produces a narrative",
+  chosen.A + chosen.B + chosen.C === spreads,
+);
+
+console.log(
+  `  ${spreads} possible spreads: Variant A ${chosen.A}, B ${chosen.B}, C ${chosen.C}.`,
+);
+console.log(
+  `  ${fallbacks.length} spreads match no rule and fall back to Variant B:`,
+);
+for (const spread of fallbacks) console.log(`    ${spread}`);
+
+check(
+  "tier counting adds up",
+  (() => {
+    const counts = countTiers(
+      resultsWithTiers({ critical: 1, high: 2, moderate: 3, sustain: 1 }),
+    );
+    return (
+      counts.critical === 1 &&
+      counts.high === 2 &&
+      counts.moderate === 3 &&
+      counts.sustain === 1
+    );
+  })(),
+);
+
+check(
+  "lowest scoring domain is the first one listed",
+  lowestScoringDomain(
+    resultsWithTiers({ critical: 1, high: 2, moderate: 3, sustain: 1 }),
+  )?.tier?.id === "critical",
+);
+
+/* -------------------------------------------------------------------------
+   Report filename
+   ------------------------------------------------------------------------- */
+
+heading("Report filename");
+
+const sampleDate = new Date(Date.UTC(2026, 7, 29));
+
+check(
+  "matches the required pattern",
+  reportFilename("Riverbank Academy", sampleDate) ===
+    "Linchpin_Assessment_Riverbank_Academy_2026-08-29.pdf",
+  reportFilename("Riverbank Academy", sampleDate),
+);
+check(
+  "punctuation is made safe",
+  reportFilename("St. Mary's School (Nairobi)", sampleDate) ===
+    "Linchpin_Assessment_St_Mary_s_School_Nairobi_2026-08-29.pdf",
+  reportFilename("St. Mary's School (Nairobi)", sampleDate),
+);
+check(
+  "a nameless school still produces a filename",
+  reportFilename("   ", sampleDate) ===
+    "Linchpin_Assessment_School_2026-08-29.pdf",
+);
+
+console.log(`  ${reportFilename("Riverbank Academy", sampleDate)}`);
 
 /* ------------------------------------------------------------------------- */
 

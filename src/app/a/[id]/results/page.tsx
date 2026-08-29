@@ -200,15 +200,21 @@ export default async function ResultsPage({
         </div>
 
         <div className="mt-14 rounded-[4px] border border-onyx/10 bg-ivory p-7 sm:p-9">
-          <p className={eyebrowText}>Stage 4</p>
+          <p className={eyebrowText}>Your full report</p>
           <h2 className="mt-4 font-display text-[1.6rem] leading-tight text-onyx">
-            Your full report
+            Download the PDF
           </h2>
           <p className="mt-4 max-w-[50ch] text-[0.94rem] leading-[1.7] text-charcoal/85">
-            The downloadable PDF report, with commentary on each domain and
-            your priority areas, is the next stage of the build. Your answers
-            are saved and will be waiting for it.
+            The full report sets out each domain in turn, the patterns across
+            them, and where to start. It is yours to keep and to share with
+            your leadership team.
           </p>
+          <a
+            href={`/a/${id}/report`}
+            className={`${primaryButton} mt-7 w-full sm:w-auto`}
+          >
+            Download my report
+          </a>
         </div>
 
         <div className="mt-12 flex flex-col gap-3 sm:flex-row">
