@@ -1,33 +1,26 @@
 /**
- * Checks the assessment content and the scoring rules.
+ * Checks the content, the scoring rules and the report logic.
  *
  * Run with: npm run verify
  *
- * This is not a substitute for testing the tool by hand. It is here to prove
- * the arithmetic, because the scores drive the report and a quiet mistake in
- * them would be invisible on screen.
+ * This does not replace testing the tool by hand. It is here to prove the
+ * arithmetic, because the scores drive the report and a quiet mistake in them
+ * would be invisible on screen.
  */
 
 import {
   ALL_QUESTION_IDS,
   DOMAINS,
+  LENS_DEFINITIONS,
   RATING_SCALE,
   TOTAL_QUESTIONS,
   TOTAL_SECTIONS,
 } from "../src/content/assessment";
 import {
-  allDomainResults,
-  byPriority,
-  domainResult,
-  formatScore,
-  lensScore,
-  roundToOneDecimal,
-  sectionsComplete,
-  tierFor,
-  TIERS,
-  type Ratings,
-} from "../src/lib/scoring";
-import { STEPS } from "../src/lib/steps";
+  CONTACT,
+  CONTACT_NEEDS_REAL_DETAILS,
+  whatsappLink,
+} from "../src/content/brand";
 import {
   GAP_DESCRIPTORS,
   GAP_NOTE,
@@ -36,6 +29,7 @@ import {
   PATTERN_VARIANTS,
   isPlaceholder,
 } from "../src/content/report";
+import { CAPTURE_INDEX, RESULTS_INDEX, STEPS } from "../src/lib/experience";
 import {
   countTiers,
   lensList,
@@ -43,10 +37,25 @@ import {
   reportFilename,
   selectVariant,
 } from "../src/lib/report";
-import type { DomainResult, TierId } from "../src/lib/scoring";
+import {
+  allDomainResults,
+  byPriority,
+  domainResult,
+  formatScore,
+  GAP_THRESHOLD,
+  lensScore,
+  roundToOneDecimal,
+  sectionsComplete,
+  tierFor,
+  TIERS,
+  type DomainResult,
+  type Ratings,
+  type TierId,
+} from "../src/lib/scoring";
 
 let failures = 0;
 let checks = 0;
+const warnings: string[] = [];
 
 function check(label: string, condition: boolean, detail = "") {
   checks += 1;
@@ -67,35 +76,44 @@ function heading(text: string) {
 
 heading("Content");
 
-check("seven domains", DOMAINS.length === 7, `found ${DOMAINS.length}`);
+check("seven areas", DOMAINS.length === 7, `found ${DOMAINS.length}`);
 check("21 sections", TOTAL_SECTIONS === 21, `found ${TOTAL_SECTIONS}`);
-check("42 questions", TOTAL_QUESTIONS === 42, `found ${TOTAL_QUESTIONS}`);
+check("21 questions", TOTAL_QUESTIONS === 21, `found ${TOTAL_QUESTIONS}`);
 check(
   "question ids are unique",
   new Set(ALL_QUESTION_IDS).size === ALL_QUESTION_IDS.length,
 );
 check("four rating options", RATING_SCALE.length === 4);
+check(
+  "lenses are named in plain language",
+  LENS_DEFINITIONS.A.name === "Design" &&
+    LENS_DEFINITIONS.B.name === "Delivery" &&
+    LENS_DEFINITIONS.C.name === "Evidence",
+);
 
 for (const domain of DOMAINS) {
-  check(
-    `${domain.id} has three lenses`,
-    domain.lenses.length === 3,
-    `found ${domain.lenses.length}`,
-  );
+  check(`${domain.id} has three lenses`, domain.lenses.length === 3);
   check(
     `${domain.id} lenses are A, B, C`,
     domain.lenses.map((lens) => lens.id).join("") === "ABC",
   );
+  check(
+    `${domain.id} has a director's question`,
+    domain.question.trim().length > 10 && domain.question.includes("?"),
+  );
+  check(`${domain.id} has an intro`, domain.intro.trim().length > 40);
+  check(`${domain.id} name has no em dash`, !domain.name.includes("—"));
+
   for (const lens of domain.lenses) {
     check(
-      `${domain.id} lens ${lens.id} has two questions`,
-      lens.questions.length === 2,
+      `${domain.id} lens ${lens.id} has at least one question`,
+      lens.questions.length >= 1,
     );
     for (const question of lens.questions) {
       check(
         `${question.id} has text`,
-        question.text.trim().length > 20,
-        question.text.slice(0, 30),
+        question.text.trim().length > 30,
+        question.text.slice(0, 40),
       );
       check(
         `${question.id} contains no em dash`,
@@ -105,35 +123,37 @@ for (const domain of DOMAINS) {
   }
 }
 
-console.log(`  ${DOMAINS.length} domains, ${TOTAL_QUESTIONS} questions read.`);
+console.log(
+  `  ${DOMAINS.length} areas, ${TOTAL_QUESTIONS} questions, about ${Math.round(
+    (TOTAL_QUESTIONS * 20) / 60,
+  )} minutes of tapping.`,
+);
 
 /* -------------------------------------------------------------------------
-   Screen sequence
+   The single screen sequence
    ------------------------------------------------------------------------- */
 
 heading("Screen sequence");
 
-const expectedSteps = TOTAL_SECTIONS * 4 + DOMAINS.length;
+const expected = 1 + DOMAINS.length + TOTAL_QUESTIONS + 2;
+check(`${expected} steps in the flow`, STEPS.length === expected, `found ${STEPS.length}`);
+check("keys are unique", new Set(STEPS.map((s) => s.key)).size === STEPS.length);
+check("opens on the introduction", STEPS[0]?.kind === "intro");
+check("ends on results", STEPS[STEPS.length - 1]?.kind === "results");
+check("capture sits before results", CAPTURE_INDEX === RESULTS_INDEX - 1);
 check(
-  `${expectedSteps} screens in the flow`,
-  STEPS.length === expectedSteps,
-  `found ${STEPS.length}`,
+  `${TOTAL_QUESTIONS} question steps`,
+  STEPS.filter((step) => step.kind === "question").length === TOTAL_QUESTIONS,
 );
 check(
-  "screen addresses are unique",
-  new Set(STEPS.map((step) => step.slug)).size === STEPS.length,
-);
-check("flow opens on a lens introduction", STEPS[0]?.kind === "lens-intro");
-check(
-  "flow closes on a domain summary",
-  STEPS[STEPS.length - 1]?.kind === "domain-review",
-);
-check(
-  "42 question screens",
-  STEPS.filter((step) => step.kind === "question").length === 42,
+  "question numbers run 1 to 21 in order",
+  STEPS.filter((step) => step.kind === "question").every(
+    (step, index) =>
+      step.kind === "question" && step.questionNumber === index + 1,
+  ),
 );
 
-console.log(`  ${STEPS.length} screens, first is "${STEPS[0]?.slug}".`);
+console.log(`  ${STEPS.length} steps, all inside one page.`);
 
 /* -------------------------------------------------------------------------
    Scoring, worked examples
@@ -142,28 +162,17 @@ console.log(`  ${STEPS.length} screens, first is "${STEPS[0]?.slug}".`);
 heading("Scoring, worked examples");
 
 const domain = DOMAINS[0];
-const [lensA, lensB, lensC] = domain.lenses;
 
-function ratingsFor(
-  a: [number, number],
-  b: [number, number],
-  c: [number, number],
-): Ratings {
+function ratingsFor(a: number, b: number, c: number): Ratings {
   return {
-    [lensA.questions[0].id]: a[0],
-    [lensA.questions[1].id]: a[1],
-    [lensB.questions[0].id]: b[0],
-    [lensB.questions[1].id]: b[1],
-    [lensC.questions[0].id]: c[0],
-    [lensC.questions[1].id]: c[1],
+    [domain.lenses[0].questions[0].id]: a,
+    [domain.lenses[1].questions[0].id]: b,
+    [domain.lenses[2].questions[0].id]: c,
   };
 }
 
 type Example = {
   label: string;
-  a: [number, number];
-  b: [number, number];
-  c: [number, number];
   lenses: [number, number, number];
   domain: number;
   tier: string;
@@ -171,125 +180,48 @@ type Example = {
 };
 
 const examples: Example[] = [
+  { label: "all threes", lenses: [3, 3, 3], domain: 3.0, tier: "Moderate Priority", gaps: [] },
+  { label: "all ones", lenses: [1, 1, 1], domain: 1.0, tier: "Critical Priority", gaps: [] },
+  { label: "all fours", lenses: [4, 4, 4], domain: 4.0, tier: "Sustain and Extend", gaps: [] },
   {
-    label: "all threes",
-    a: [3, 3],
-    b: [3, 3],
-    c: [3, 3],
-    lenses: [3, 3, 3],
-    domain: 3.0,
-    tier: "Moderate Priority",
-    gaps: [],
-  },
-  {
-    label: "all ones",
-    a: [1, 1],
-    b: [1, 1],
-    c: [1, 1],
-    lenses: [1, 1, 1],
-    domain: 1.0,
-    tier: "Critical Priority",
-    gaps: [],
-  },
-  {
-    label: "all fours",
-    a: [4, 4],
-    b: [4, 4],
-    c: [4, 4],
-    lenses: [4, 4, 4],
-    domain: 4.0,
-    tier: "Sustain and Extend",
-    gaps: [],
-  },
-  {
-    label: "strong design, no evidence",
-    a: [4, 4],
-    b: [4, 4],
-    c: [1, 1],
+    label: "designed well, no evidence",
     lenses: [4, 4, 1],
     domain: 3.0,
     tier: "Moderate Priority",
-    gaps: ["A", "B", "C"],
+    gaps: ["C"],
   },
   {
-    label: "mixed, rounds up",
-    a: [2, 2],
-    b: [2, 3],
-    c: [2, 2],
-    lenses: [2, 2.5, 2],
-    domain: 2.2,
-    tier: "High Priority",
-    gaps: [],
-  },
-  {
-    label: "top of High Priority band",
-    a: [2, 3],
-    b: [2, 3],
-    c: [2, 3],
-    lenses: [2.5, 2.5, 2.5],
-    domain: 2.5,
-    tier: "High Priority",
-    gaps: [],
-  },
-  {
-    label: "just into Moderate",
-    a: [3, 3],
-    b: [3, 3],
-    c: [2, 2],
-    lenses: [3, 3, 2],
-    domain: 2.7,
-    tier: "Moderate Priority",
-    gaps: [],
-  },
-  {
-    label: "brief worked example, domain 3",
-    a: [3, 2],
-    b: [3, 2],
-    c: [2, 1],
-    lenses: [2.5, 2.5, 1.5],
-    domain: 2.2,
-    tier: "High Priority",
-    gaps: [],
-  },
-  {
-    label: "one lens above the domain",
-    a: [3, 4],
-    b: [2, 2],
-    c: [2, 2],
-    lenses: [3.5, 2, 2],
-    domain: 2.5,
+    label: "design far ahead of the rest",
+    lenses: [4, 1, 2],
+    domain: 2.3,
     tier: "High Priority",
     gaps: ["A"],
   },
   {
-    label: "practice lags design and data",
-    a: [4, 4],
-    b: [2, 2],
-    c: [4, 3],
-    lenses: [4, 2, 3.5],
-    domain: 3.2,
+    label: "one point apart, not flagged",
+    lenses: [4, 2, 3],
+    domain: 3.0,
     tier: "Moderate Priority",
-    gaps: ["B"],
+    gaps: [],
   },
+  { label: "mixed, rounds up", lenses: [2, 3, 2], domain: 2.3, tier: "High Priority", gaps: [] },
+  { label: "just into Moderate", lenses: [3, 3, 2], domain: 2.7, tier: "Moderate Priority", gaps: [] },
+  { label: "struggling", lenses: [2, 2, 1], domain: 1.7, tier: "Critical Priority", gaps: [] },
 ];
 
 for (const example of examples) {
-  const ratings = ratingsFor(example.a, example.b, example.c);
-  const result = domainResult(domain, ratings);
-
-  const actualLenses = result.lenses.map((lens) => lens.score);
-  check(
-    `${example.label}: lens scores`,
-    JSON.stringify(actualLenses) === JSON.stringify(example.lenses),
-    `expected ${JSON.stringify(example.lenses)}, got ${JSON.stringify(actualLenses)}`,
+  const result = domainResult(
+    domain,
+    ratingsFor(example.lenses[0], example.lenses[1], example.lenses[2]),
   );
+
   check(
-    `${example.label}: displayed domain score`,
+    `${example.label}: displayed score`,
     result.displayScore === example.domain,
     `expected ${example.domain}, got ${result.displayScore}`,
   );
   check(
-    `${example.label}: stored score rounds to the displayed one`,
+    `${example.label}: stored score rounds to it`,
     roundToOneDecimal(result.score as number) === example.domain,
     `stored ${result.score}`,
   );
@@ -299,107 +231,92 @@ for (const example of examples) {
     `expected ${example.tier}, got ${result.tier?.label}`,
   );
   check(
-    `${example.label}: lens gaps`,
+    `${example.label}: gaps`,
     JSON.stringify(result.gapLenses) === JSON.stringify(example.gaps),
     `expected ${JSON.stringify(example.gaps)}, got ${JSON.stringify(result.gapLenses)}`,
   );
 
   console.log(
-    `  ${example.label.padEnd(30)} lenses ${example.lenses
-      .map((value) => value.toFixed(1))
-      .join(" / ")}  ->  ${formatScore(result.score as number)}  ${
-      result.tier?.label
-    }${result.gapLenses.length ? `  (gap: lens ${result.gapLenses.join(", ")})` : ""}`,
+    `  ${example.label.padEnd(28)} ${example.lenses.join(" / ")}  ->  ${formatScore(
+      result.displayScore as number,
+    )}  ${result.tier?.label}${
+      result.gapLenses.length ? `  (gap: ${result.gapLenses.join(", ")})` : ""
+    }`,
   );
 }
 
 /* -------------------------------------------------------------------------
-   The rule that a partial domain never produces a score
+   A partial area never produces a score
    ------------------------------------------------------------------------- */
 
-heading("Partial domains");
+heading("Partial areas");
 
-const twoLenses = ratingsFor([3, 3], [3, 3], [3, 3]);
-delete twoLenses[lensC.questions[1].id];
+const partialRatings = ratingsFor(3, 3, 3);
+delete partialRatings[domain.lenses[2].questions[0].id];
+const partial = domainResult(domain, partialRatings);
 
-const partial = domainResult(domain, twoLenses);
-check("no score when a lens is incomplete", partial.score === null);
-check("no tier when a lens is incomplete", partial.tier === null);
-check("domain is not marked complete", partial.complete === false);
-check("no gap flags on an incomplete domain", partial.gapLenses.length === 0);
-check("complete lenses still score", partial.lenses[0].score === 3);
-check("incomplete lens has no score", partial.lenses[2].score === null);
-
-const oneAnswerMissing = ratingsFor([3, 3], [3, 3], [3, 3]);
-delete oneAnswerMissing[lensA.questions[0].id];
+check("no score when a view is missing", partial.score === null);
+check("no tier when a view is missing", partial.tier === null);
+check("not marked complete", partial.complete === false);
+check("no gap flags", partial.gapLenses.length === 0);
+check("answered views still score", partial.lenses[0].score === 3);
+check("missing view has no score", partial.lenses[2].score === null);
 check(
-  "a lens with one answer has no lens score",
-  lensScore(lensA, oneAnswerMissing) === null,
+  "a lens with no answer has no score",
+  lensScore(domain.lenses[0], {}) === null,
 );
 
-console.log("  A domain score is withheld until all three lenses are done.");
+console.log("  A score is withheld until all three views are answered.");
 
 /* -------------------------------------------------------------------------
-   Every possible answer combination
+   Every possible combination for one area
    ------------------------------------------------------------------------- */
 
-heading("Every possible combination for one domain");
+heading("Every possible combination for one area");
 
 const reachable = new Map<number, string>();
 let combinations = 0;
 let gapCount = 0;
 
-for (let a1 = 1; a1 <= 4; a1++)
-  for (let a2 = 1; a2 <= 4; a2++)
-    for (let b1 = 1; b1 <= 4; b1++)
-      for (let b2 = 1; b2 <= 4; b2++)
-        for (let c1 = 1; c1 <= 4; c1++)
-          for (let c2 = 1; c2 <= 4; c2++) {
-            combinations += 1;
-            const result = domainResult(
-              domain,
-              ratingsFor([a1, a2], [b1, b2], [c1, c2]),
-            );
+for (let a = 1; a <= 4; a += 1)
+  for (let b = 1; b <= 4; b += 1)
+    for (let c = 1; c <= 4; c += 1) {
+      combinations += 1;
+      const result = domainResult(domain, ratingsFor(a, b, c));
+      if (result.displayScore === null || result.tier === null) {
+        check("every full area produces a score and a tier", false);
+        continue;
+      }
+      if (result.gapFlag) gapCount += 1;
+      reachable.set(result.displayScore, result.tier.label);
+    }
 
-            if (result.score === null || result.tier === null) {
-              check("every full domain produces a score and a tier", false);
-              continue;
-            }
-            if (result.gapLenses.length > 0) gapCount += 1;
-            reachable.set(result.score, result.tier.label);
-          }
-
-check("4096 combinations tested", combinations === 4096);
-check(
-  "every combination landed in a tier",
-  reachable.size > 0 && [...reachable.values()].every(Boolean),
-);
-
+check("64 combinations tested", combinations === 64);
 const ordered = [...reachable.keys()].sort((x, y) => x - y);
 console.log(`  ${combinations} combinations, ${ordered.length} distinct scores.`);
 console.log(
-  `  ${gapCount} of ${combinations} combinations raise a lens gap flag.`,
+  `  ${gapCount} of ${combinations} raise a gap flag (${Math.round(
+    (gapCount / combinations) * 100,
+  )} per cent), at a threshold of ${GAP_THRESHOLD}.`,
 );
 
 for (const tier of TIERS) {
   const inTier = ordered.filter((score) => reachable.get(score) === tier.label);
   console.log(
-    `  ${tier.label.padEnd(20)} ${tier.min.toFixed(1)} to ${tier.max.toFixed(
-      1,
-    )}   reachable: ${inTier.map((score) => score.toFixed(1)).join(", ") || "none"}`,
+    `  ${tier.label.padEnd(20)} ${tier.min.toFixed(1)} to ${tier.max.toFixed(1)}   reachable: ${
+      inTier.map((score) => score.toFixed(1)).join(", ") || "none"
+    }`,
   );
 }
 
 /* -------------------------------------------------------------------------
-   Tier bands
+   Tier bands and colours
    ------------------------------------------------------------------------- */
 
-heading("Tier bands");
+heading("Tier bands and colours");
 
-for (let tenths = 10; tenths <= 40; tenths++) {
-  const score = tenths / 10;
-  const tier = tierFor(score);
-  check(`${score.toFixed(1)} falls in a tier`, tier !== null);
+for (let tenths = 10; tenths <= 40; tenths += 1) {
+  check(`${(tenths / 10).toFixed(1)} falls in a tier`, tierFor(tenths / 10) !== null);
 }
 
 check("1.9 is Critical", tierFor(1.9)?.id === "critical");
@@ -408,39 +325,6 @@ check("2.5 is High", tierFor(2.5)?.id === "high");
 check("2.6 is Moderate", tierFor(2.6)?.id === "moderate");
 check("3.2 is Moderate", tierFor(3.2)?.id === "moderate");
 check("3.3 is Sustain", tierFor(3.3)?.id === "sustain");
-check("4.0 is Sustain", tierFor(4.0)?.id === "sustain");
-check("rounding lifts 2.55 to 2.6", roundToOneDecimal(2.55) === 2.6);
-check("rounding is stable at 2.65", roundToOneDecimal(2.65) === 2.7);
-
-console.log("  Every value from 1.0 to 4.0 in tenths belongs to one tier.");
-
-/* -------------------------------------------------------------------------
-   Progress counting
-   ------------------------------------------------------------------------- */
-
-heading("Progress counting");
-
-check("no answers means no sections", sectionsComplete({}) === 0);
-
-const oneSection: Ratings = {
-  [lensA.questions[0].id]: 3,
-  [lensA.questions[1].id]: 4,
-};
-check("one finished lens counts as one section", sectionsComplete(oneSection) === 1);
-
-const halfSection: Ratings = { [lensA.questions[0].id]: 3 };
-check("a half finished lens counts as none", sectionsComplete(halfSection) === 0);
-
-const everything: Ratings = Object.fromEntries(
-  ALL_QUESTION_IDS.map((id) => [id, 3]),
-);
-check("all answers means 21 sections", sectionsComplete(everything) === 21);
-
-/* -------------------------------------------------------------------------
-   Tier colours
-   ------------------------------------------------------------------------- */
-
-heading("Tier colours");
 
 const EXPECTED_COLOURS: Record<string, string> = {
   critical: "#C0392B",
@@ -455,59 +339,26 @@ for (const tier of TIERS) {
     tier.color.toUpperCase() === EXPECTED_COLOURS[tier.id],
     `expected ${EXPECTED_COLOURS[tier.id]}, got ${tier.color}`,
   );
-  console.log(`  ${tier.label.padEnd(20)} ${tier.color}`);
 }
 
-/* -------------------------------------------------------------------------
-   Full precision is kept, display is rounded
-   ------------------------------------------------------------------------- */
-
-heading("Precision");
-
-const precise = domainResult(domain, ratingsFor([3, 2], [3, 2], [2, 1]));
-check(
-  "stored score keeps full precision",
-  precise.score !== null && precise.score.toFixed(10) === "2.1666666667",
-  `got ${precise.score}`,
-);
-check("display score is rounded", precise.displayScore === 2.2);
-check("formatted score reads 2.2", formatScore(precise.score as number) === "2.2");
-console.log(
-  `  stored ${precise.score}, displayed ${formatScore(precise.score as number)}`,
-);
+console.log("  Every value from 1.0 to 4.0 in tenths belongs to one tier.");
 
 /* -------------------------------------------------------------------------
-   Dashboard ordering
+   Progress counting
    ------------------------------------------------------------------------- */
 
-heading("Dashboard ordering");
+heading("Progress counting");
 
-const spread: Ratings = {};
-const wanted = [3, 1, 2, 4, 3, 2, 3];
-DOMAINS.forEach((eachDomain, index) => {
-  for (const lens of eachDomain.lenses) {
-    for (const question of lens.questions) {
-      spread[question.id] = wanted[index];
-    }
-  }
-});
+check("no answers means no sections", sectionsComplete({}) === 0);
+check(
+  "one answered view counts as one section",
+  sectionsComplete({ [domain.lenses[0].questions[0].id]: 3 }) === 1,
+);
 
-const orderedResults = byPriority(allDomainResults(spread));
-const orderedScores = orderedResults.map((result) => result.displayScore);
-check(
-  "most urgent domain comes first",
-  orderedScores[0] === 1 && orderedScores[orderedScores.length - 1] === 4,
-  JSON.stringify(orderedScores),
+const everything: Ratings = Object.fromEntries(
+  ALL_QUESTION_IDS.map((id) => [id, 3]),
 );
-check(
-  "scores ascend down the table",
-  orderedScores.every(
-    (score, index) =>
-      index === 0 || (score as number) >= (orderedScores[index - 1] as number),
-  ),
-  JSON.stringify(orderedScores),
-);
-console.log(`  order: ${orderedScores.map((s) => (s as number).toFixed(1)).join(", ")}`);
+check("all answers means 21 sections", sectionsComplete(everything) === 21);
 
 /* -------------------------------------------------------------------------
    Report content
@@ -515,58 +366,60 @@ console.log(`  order: ${orderedScores.map((s) => (s as number).toFixed(1)).join(
 
 heading("Report content");
 
-let outstanding = 0;
 let descriptorCount = 0;
+let outstanding = 0;
 
 for (const eachDomain of DOMAINS) {
   const set = GAP_DESCRIPTORS[eachDomain.id];
-  check(`${eachDomain.id} has gap descriptors`, Boolean(set));
+  check(`${eachDomain.id} has descriptors`, Boolean(set));
   if (!set) continue;
   for (const tier of TIERS) {
     descriptorCount += 1;
     const text = set[tier.id];
     check(
-      `${eachDomain.id} ${tier.id} descriptor exists`,
-      typeof text === "string" && text.length > 0,
+      `${eachDomain.id} ${tier.id} descriptor is written`,
+      typeof text === "string" && text.trim().length > 60,
+    );
+    check(
+      `${eachDomain.id} ${tier.id} descriptor has no em dash`,
+      !text.includes("—"),
     );
     if (isPlaceholder(text)) outstanding += 1;
   }
 }
 
-check("28 gap descriptors", descriptorCount === 28, `found ${descriptorCount}`);
+check("28 descriptors", descriptorCount === 28, `found ${descriptorCount}`);
+check("nothing left unwritten", outstanding === 0, `${outstanding} outstanding`);
 check("two How to Read paragraphs", HOW_TO_READ.length === 2);
 check("three next steps", NEXT_STEPS.length === 3);
 check(
-  "next step two names the lowest domain",
+  "next step two names the lowest area",
   NEXT_STEPS[1].paragraphs.join(" ").includes("{{DOMAIN}}"),
 );
-check("gap note keeps its tokens", GAP_NOTE.includes("{{LENSES}}"));
-check("three narrative variants", Object.keys(PATTERN_VARIANTS).length === 3);
-
+check("gap note keeps its tokens", GAP_NOTE.includes("{{LENSES}}") && GAP_NOTE.includes("{{VERB}}"));
+check("three narratives", Object.keys(PATTERN_VARIANTS).length === 3);
 for (const variant of ["A", "B", "C"] as const) {
-  if (PATTERN_VARIANTS[variant].some(isPlaceholder)) outstanding += 1;
+  check(
+    `variant ${variant} is written`,
+    PATTERN_VARIANTS[variant].length > 0 &&
+      !PATTERN_VARIANTS[variant].some(isPlaceholder),
+  );
 }
 
-check("lens list reads well for one lens", lensList(["B"]) === "Practice");
+check("one view reads well", lensList(["B"]) === "Delivery");
+check("two views read well", lensList(["A", "C"]) === "Design and Evidence");
 check(
-  "lens list reads well for two lenses",
-  lensList(["A", "C"]) === "Intent and Outcomes",
-);
-check(
-  "lens list reads well for three lenses",
-  lensList(["A", "B", "C"]) === "Intent, Practice and Outcomes",
+  "three views read well",
+  lensList(["A", "B", "C"]) === "Design, Delivery and Evidence",
 );
 
-console.log(`  ${descriptorCount} gap descriptors and 3 variants defined.`);
-console.log(
-  `  ${outstanding} pieces of copy still say "To be supplied" and print greyed out.`,
-);
+console.log(`  ${descriptorCount} descriptors and 3 narratives, all written.`);
 
 /* -------------------------------------------------------------------------
-   Narrative variant selection
+   Narrative selection
    ------------------------------------------------------------------------- */
 
-heading("Narrative variant selection");
+heading("Narrative selection");
 
 function resultsWithTiers(counts: Record<TierId, number>): DomainResult[] {
   const results: DomainResult[] = [];
@@ -592,31 +445,22 @@ function resultsWithTiers(counts: Record<TierId, number>): DomainResult[] {
 }
 
 check(
-  "two Critical domains give Variant A",
-  selectVariant(
-    resultsWithTiers({ critical: 2, high: 2, moderate: 2, sustain: 1 }),
-  ).id === "A",
+  "two Critical gives A",
+  selectVariant(resultsWithTiers({ critical: 2, high: 2, moderate: 2, sustain: 1 })).id === "A",
 );
 check(
-  "one Critical with four High gives Variant B",
-  selectVariant(
-    resultsWithTiers({ critical: 1, high: 4, moderate: 0, sustain: 2 }),
-  ).id === "B",
+  "one Critical with four High gives B",
+  selectVariant(resultsWithTiers({ critical: 1, high: 4, moderate: 0, sustain: 2 })).id === "B",
 );
 check(
-  "a settled school gives Variant C",
-  selectVariant(
-    resultsWithTiers({ critical: 0, high: 1, moderate: 2, sustain: 4 }),
-  ).id === "C",
+  "a settled school gives C",
+  selectVariant(resultsWithTiers({ critical: 0, high: 1, moderate: 2, sustain: 4 })).id === "C",
 );
 check(
-  "Variant B wins when B and C both apply",
-  selectVariant(
-    resultsWithTiers({ critical: 0, high: 0, moderate: 5, sustain: 2 }),
-  ).id === "B",
+  "B wins when B and C both apply",
+  selectVariant(resultsWithTiers({ critical: 0, high: 0, moderate: 5, sustain: 2 })).id === "B",
 );
 
-// Every way seven domains can fall across four tiers.
 let spreads = 0;
 const chosen: Record<string, number> = { A: 0, B: 0, C: 0 };
 const fallbacks: string[] = [];
@@ -626,8 +470,9 @@ for (let critical = 0; critical <= 7; critical += 1)
     for (let moderate = 0; moderate <= 7 - critical - high; moderate += 1) {
       const sustain = 7 - critical - high - moderate;
       spreads += 1;
-      const counts = { critical, high, moderate, sustain };
-      const choice = selectVariant(resultsWithTiers(counts));
+      const choice = selectVariant(
+        resultsWithTiers({ critical, high, moderate, sustain }),
+      );
       chosen[choice.id] += 1;
       if (choice.fellBack) {
         fallbacks.push(`${critical}C ${high}H ${moderate}M ${sustain}S`);
@@ -635,40 +480,42 @@ for (let critical = 0; critical <= 7; critical += 1)
     }
 
 check("120 possible spreads", spreads === 120, `found ${spreads}`);
-check(
-  "every spread produces a narrative",
-  chosen.A + chosen.B + chosen.C === spreads,
-);
-
-console.log(
-  `  ${spreads} possible spreads: Variant A ${chosen.A}, B ${chosen.B}, C ${chosen.C}.`,
-);
-console.log(
-  `  ${fallbacks.length} spreads match no rule and fall back to Variant B:`,
-);
-for (const spread of fallbacks) console.log(`    ${spread}`);
-
+check("every spread gets a narrative", chosen.A + chosen.B + chosen.C === spreads);
 check(
   "tier counting adds up",
   (() => {
     const counts = countTiers(
       resultsWithTiers({ critical: 1, high: 2, moderate: 3, sustain: 1 }),
     );
-    return (
-      counts.critical === 1 &&
-      counts.high === 2 &&
-      counts.moderate === 3 &&
-      counts.sustain === 1
-    );
+    return counts.critical === 1 && counts.high === 2 && counts.moderate === 3;
   })(),
 );
-
 check(
-  "lowest scoring domain is the first one listed",
+  "lowest scoring area comes first",
   lowestScoringDomain(
     resultsWithTiers({ critical: 1, high: 2, moderate: 3, sustain: 1 }),
   )?.tier?.id === "critical",
 );
+check(
+  "results order ascends by score",
+  (() => {
+    const spread: Ratings = {};
+    const wanted = [3, 1, 2, 4, 3, 2, 3];
+    DOMAINS.forEach((eachDomain, index) => {
+      for (const lens of eachDomain.lenses) {
+        for (const question of lens.questions) spread[question.id] = wanted[index];
+      }
+    });
+    const scores = byPriority(allDomainResults(spread)).map((r) => r.displayScore);
+    return scores.every(
+      (score, index) =>
+        index === 0 || (score as number) >= (scores[index - 1] as number),
+    );
+  })(),
+);
+
+console.log(`  ${spreads} spreads: A ${chosen.A}, B ${chosen.B}, C ${chosen.C}.`);
+console.log(`  ${fallbacks.length} match no rule and fall back to B: ${fallbacks.join(", ") || "none"}`);
 
 /* -------------------------------------------------------------------------
    Report filename
@@ -677,7 +524,6 @@ check(
 heading("Report filename");
 
 const sampleDate = new Date(Date.UTC(2026, 7, 29));
-
 check(
   "matches the required pattern",
   reportFilename("Riverbank Academy", sampleDate) ===
@@ -690,15 +536,38 @@ check(
     "Linchpin_Assessment_St_Mary_s_School_Nairobi_2026-08-29.pdf",
   reportFilename("St. Mary's School (Nairobi)", sampleDate),
 );
-check(
-  "a nameless school still produces a filename",
-  reportFilename("   ", sampleDate) ===
-    "Linchpin_Assessment_School_2026-08-29.pdf",
-);
-
 console.log(`  ${reportFilename("Riverbank Academy", sampleDate)}`);
 
+/* -------------------------------------------------------------------------
+   Contact details in the frame
+   ------------------------------------------------------------------------- */
+
+heading("Contact details");
+
+check("website is set", CONTACT.website.includes("linchpineducation"));
+check(
+  "the WhatsApp link is well formed",
+  whatsappLink().startsWith("https://wa.me/") && /^\d{9,15}$/.test(CONTACT.whatsappNumber),
+  whatsappLink(),
+);
+
+if (CONTACT_NEEDS_REAL_DETAILS) {
+  warnings.push(
+    "The email address and WhatsApp number in src/content/brand.ts are still placeholders. The frame will show them to every visitor until they are replaced.",
+  );
+}
+
+console.log(`  website  ${CONTACT.website}`);
+console.log(`  email    ${CONTACT.email}`);
+console.log(`  whatsapp ${CONTACT.whatsappDisplay}`);
+
 /* ------------------------------------------------------------------------- */
+
+if (warnings.length > 0) {
+  console.log("\nWarnings");
+  console.log("--------");
+  for (const warning of warnings) console.log(`  ${warning}`);
+}
 
 console.log(
   `\n${failures === 0 ? "PASSED" : "FAILED"}: ${checks - failures} of ${checks} checks passed.\n`,

@@ -404,7 +404,7 @@ function FindingBlock({ result }: { result: DomainResult }) {
           <Copy
             text={fillTokens(GAP_NOTE, {
               LENSES: lensList(result.gapLenses),
-              LENS_WORD: result.gapLenses.length === 1 ? "lens" : "lenses",
+              LENS_WORD: result.gapLenses.length === 1 ? "view" : "views",
               VERB: result.gapLenses.length === 1 ? "differs" : "differ",
             })}
           />
@@ -508,7 +508,9 @@ export function ReportDocument({ data }: { data: ReportData }) {
           </View>
         ))}
 
-        <View style={{ marginTop: 44 }}>
+        {/* Started on its own page so the heading is never left stranded at
+            the foot of the summary table. */}
+        <View break>
           <SectionHeading index="Four" title={FINDINGS_HEADING} />
         </View>
 

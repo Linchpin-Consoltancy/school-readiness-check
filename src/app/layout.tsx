@@ -16,9 +16,9 @@ const jost = Jost({
 });
 
 export const metadata: Metadata = {
-  title: "School Systems Self-Assessment | Linchpin Education",
+  title: "School Readiness Check | Linchpin Education",
   description:
-    "A structured diagnostic for school leaders. Assess your school's academic systems across seven domains and receive a detailed report.",
+    "A seven minute check for school owners and heads. See which parts of your school are ready for what parents are now asking, and get a report you can act on.",
 };
 
 export const viewport: Viewport = {

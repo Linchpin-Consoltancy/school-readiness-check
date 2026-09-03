@@ -58,8 +58,19 @@ export const TIERS: readonly Tier[] = [
 /** Guards against binary floating point drift in comparisons. */
 const EPSILON = 1e-9;
 
-/** A lens is flagged when it differs from its domain score by this much. */
-export const GAP_THRESHOLD = 1.0;
+/**
+ * How far one view has to sit from its area score before it is flagged.
+ *
+ * Calibrated to the granularity of a lens score. With one question per view a
+ * lens score is a whole number, so a difference of exactly 1.0 happens often
+ * and by arithmetic rather than by meaning: at that threshold two thirds of
+ * all possible answer combinations raise a flag, which makes the flag noise.
+ * At 1.5 it fires on roughly a quarter, which is close to the selectivity the
+ * original two question design produced and leaves the flag worth reading.
+ *
+ * If a view is ever given two questions again, this should go back to 1.0.
+ */
+export const GAP_THRESHOLD = 1.5;
 
 export function roundToOneDecimal(value: number): number {
   return Math.round((value + Number.EPSILON) * 10) / 10;
@@ -94,10 +105,10 @@ export function tierById(id: string): Tier | null {
  * Returns null unless both questions are answered.
  */
 export function lensScore(lens: Lens, ratings: Ratings): number | null {
-  const first = ratings[lens.questions[0].id];
-  const second = ratings[lens.questions[1].id];
-  if (first == null || second == null) return null;
-  return (first + second) / 2;
+  const values = lens.questions.map((question) => ratings[question.id]);
+  if (values.length === 0 || values.some((value) => value == null)) return null;
+  const total = (values as number[]).reduce((sum, value) => sum + value, 0);
+  return total / values.length;
 }
 
 export type LensResult = {

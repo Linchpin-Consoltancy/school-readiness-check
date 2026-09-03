@@ -16,9 +16,13 @@ datasource db {
 model Assessment {
   id String @id
 
-  // School profile, captured at registration.
+  // Captured at the end of the assessment, once the director has invested
+  // the time and has a reason to hand over their details.
   fullName   String
   email      String
+  /// Defaulted so the column could be added without disturbing existing rows.
+  /// New assessments always supply it; the form requires it.
+  phone      String  @default("")
   schoolName String
   schoolType String
   enrolment  String
