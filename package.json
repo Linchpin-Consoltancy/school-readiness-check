@@ -11,7 +11,8 @@
     "verify": "tsx scripts/verify.ts",
     "scores": "tsx scripts/scores.ts",
     "recalculate": "tsx scripts/recalculate.ts",
-    "preview-report": "tsx scripts/preview-report.ts"
+    "preview-report": "tsx scripts/preview-report.ts",
+    "leads": "tsx scripts/leads.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

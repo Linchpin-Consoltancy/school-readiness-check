@@ -1,10 +1,15 @@
 import {
+  Circle,
   Document,
+  Line,
   Page,
+  Path,
   StyleSheet,
+  Svg,
   Text,
   View,
 } from "@react-pdf/renderer";
+import { MARK } from "@/content/brand";
 import type { Style } from "@react-pdf/types";
 import {
   DISCLAIMER,
@@ -56,30 +61,23 @@ const styles = StyleSheet.create({
     lineHeight: 1.6,
   },
 
-  /* --- brandmark ---------------------------------------------------- */
+  /* --- brandmark, drawn from the supplied artwork ------------------- */
   brandRow: { flexDirection: "row", alignItems: "center" },
-  brandWords: { flexDirection: "row", alignItems: "flex-end" },
-  brandDiamond: {
-    width: 6,
-    height: 6,
-    backgroundColor: COLOR.amber,
-    transform: "rotate(45deg)",
-    marginRight: 9,
-  },
+  brandMark: { width: 21, height: 28, marginRight: 10 },
+  brandWords: { justifyContent: "center" },
   brandName: {
-    fontFamily: "Cormorant Garamond",
-    fontSize: 15,
+    fontSize: 11,
+    fontWeight: 600,
     lineHeight: 1,
+    letterSpacing: 1.1,
     color: COLOR.onyx,
-    marginRight: 7,
   },
   brandSuffix: {
-    fontSize: 6,
+    fontSize: 5,
     lineHeight: 1,
-    letterSpacing: 2.2,
-    color: COLOR.dusk,
-    textTransform: "uppercase",
-    marginBottom: 2.5,
+    letterSpacing: 1.6,
+    color: COLOR.amber,
+    marginTop: 3.5,
   },
   brandRule: {
     height: 1,
@@ -294,13 +292,50 @@ export type ReportData = {
 
 function Brandmark() {
   return (
-    <View>
-      <View style={styles.brandRow}>
-        <View style={styles.brandDiamond} />
-        <View style={styles.brandWords}>
-          <Text style={styles.brandName}>Linchpin</Text>
-          <Text style={styles.brandSuffix}>Education</Text>
-        </View>
+    <View style={styles.brandRow}>
+      <Svg style={styles.brandMark} viewBox={MARK.viewBox}>
+        <Circle
+          cx={MARK.ring.cx}
+          cy={MARK.ring.cy}
+          r={MARK.ring.r}
+          stroke={COLOR.onyx}
+          strokeWidth={MARK.strokeWidth}
+          fill="none"
+        />
+        <Circle
+          cx={MARK.core.cx}
+          cy={MARK.core.cy}
+          r={MARK.core.r}
+          fill={COLOR.amber}
+        />
+        <Line
+          x1={MARK.stem.x1}
+          y1={MARK.stem.y1}
+          x2={MARK.stem.x2}
+          y2={MARK.stem.y2}
+          stroke={COLOR.onyx}
+          strokeWidth={MARK.strokeWidth}
+          strokeLinecap="round"
+        />
+        <Path
+          d={MARK.legLeft}
+          stroke={COLOR.onyx}
+          strokeWidth={MARK.strokeWidth}
+          strokeLinecap="round"
+          fill="none"
+        />
+        <Path
+          d={MARK.legRight}
+          stroke={COLOR.onyx}
+          strokeWidth={MARK.strokeWidth}
+          strokeLinecap="round"
+          fill="none"
+        />
+      </Svg>
+
+      <View style={styles.brandWords}>
+        <Text style={styles.brandName}>LINCHPIN</Text>
+        <Text style={styles.brandSuffix}>EDUCATION</Text>
       </View>
     </View>
   );

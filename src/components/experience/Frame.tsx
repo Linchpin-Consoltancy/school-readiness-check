@@ -84,11 +84,8 @@ function ContactBar() {
           className="flex min-w-0 items-center gap-2 text-onyx transition-colors hover:text-amber"
         >
           <WhatsAppIcon />
-          <span className="hidden truncate text-[0.74rem] font-medium tracking-[0.06em] sm:block">
+          <span className="truncate text-[0.68rem] font-medium tracking-[0.06em] sm:text-[0.74rem]">
             {CONTACT.whatsappDisplay}
-          </span>
-          <span className="text-[0.68rem] font-medium tracking-[0.06em] sm:hidden">
-            WhatsApp
           </span>
         </a>
       </div>

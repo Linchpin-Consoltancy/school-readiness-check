@@ -18,8 +18,9 @@ import {
 } from "../src/content/assessment";
 import {
   CONTACT,
-  CONTACT_NEEDS_REAL_DETAILS,
+  emailIsWellFormed,
   whatsappLink,
+  whatsappNumberIsWellFormed,
 } from "../src/content/brand";
 import {
   GAP_DESCRIPTORS,
@@ -545,17 +546,23 @@ console.log(`  ${reportFilename("Riverbank Academy", sampleDate)}`);
 heading("Contact details");
 
 check("website is set", CONTACT.website.includes("linchpineducation"));
+check("email is well formed", emailIsWellFormed(), CONTACT.email);
 check(
-  "the WhatsApp link is well formed",
-  whatsappLink().startsWith("https://wa.me/") && /^\d{9,15}$/.test(CONTACT.whatsappNumber),
+  "WhatsApp number is digits only, international form",
+  whatsappNumberIsWellFormed(),
+  CONTACT.whatsappNumber,
+);
+check(
+  "the WhatsApp link opens a chat",
+  whatsappLink().startsWith(`https://wa.me/${CONTACT.whatsappNumber}?text=`),
   whatsappLink(),
 );
-
-if (CONTACT_NEEDS_REAL_DETAILS) {
-  warnings.push(
-    "The email address and WhatsApp number in src/content/brand.ts are still placeholders. The frame will show them to every visitor until they are replaced.",
-  );
-}
+check(
+  "the displayed number matches the dialling number",
+  CONTACT.whatsappDisplay.replace(/\D/g, "").replace(/^0/, "254") ===
+    CONTACT.whatsappNumber,
+  `shown ${CONTACT.whatsappDisplay}, dialled ${CONTACT.whatsappNumber}`,
+);
 
 console.log(`  website  ${CONTACT.website}`);
 console.log(`  email    ${CONTACT.email}`);

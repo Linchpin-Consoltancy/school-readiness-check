@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 90" width="320" height="90">
+  <g transform="translate(22,9)">
+  <circle cx="27" cy="19" r="14.5" stroke="#1B3040" stroke-width="2.5" fill="none"/>
+  <circle cx="27" cy="19" r="5" fill="#C07B2A"/>
+  <line x1="27" y1="33.5" x2="27" y2="56" stroke="#1B3040" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M27 56 L14 70" stroke="#1B3040" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M27 56 L40 70" stroke="#1B3040" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  </g>
+  <text x="102" y="45" font-family="Jost*" font-size="22" font-weight="600"
+        letter-spacing="2.2" fill="#1B3040">LINCHPIN</text>
+  <text x="103" y="63" font-family="Jost*" font-size="10" font-weight="400"
+        letter-spacing="3.2" fill="#C07B2A">EDUCATION</text>
+</svg>

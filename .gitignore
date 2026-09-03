@@ -46,3 +46,6 @@ next-env.d.ts
 
 # report design previews
 /.preview/
+
+# lead export
+/leads.csv
