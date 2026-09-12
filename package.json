@@ -12,10 +12,7 @@
     "scores": "tsx scripts/scores.ts",
     "recalculate": "tsx scripts/recalculate.ts",
     "preview-report": "tsx scripts/preview-report.ts",
-    "leads": "tsx scripts/leads.ts",
-    "postinstall": "prisma generate",
-    "vercel-build": "prisma migrate deploy && next build",
-    "db:push": "prisma migrate deploy"
+    "leads": "tsx scripts/leads.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
