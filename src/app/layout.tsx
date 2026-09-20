@@ -15,10 +15,18 @@ const jost = Jost({
   display: "swap",
 });
 
+/* Defaults for every page. The website and the readiness check each set
+   their own title and description on top of these.
+
+   The verification line is what proves to Google that this domain belongs
+   to Linchpin. It was in the original website and has to stay, or the
+   Google Search Console listing stops working. */
 export const metadata: Metadata = {
-  title: "School Readiness Check | Linchpin Education",
+  metadataBase: new URL("https://linchpineducation.com"),
+  title: "Linchpin Education",
   description:
-    "A seven minute check for school owners and heads. See which parts of your school are ready for what parents are now asking, and get a report you can act on.",
+    "Linchpin Education partners with schools that refuse to leave quality to chance, building the systems, structures, and routines that make effective leadership sustainable and consistent learning a reality.",
+  verification: { google: "scAMhn4zWEipnwQci3JPtSwlGU9iH32q_ROJtaQE6no" },
 };
 
 export const viewport: Viewport = {

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://linchpineducation.com/sitemap.xml

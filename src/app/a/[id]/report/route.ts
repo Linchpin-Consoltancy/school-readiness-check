@@ -62,7 +62,7 @@ export async function GET(
   // A report is only produced for a finished assessment, since a partial one
   // would carry domains with no score at all.
   if (questionsAnswered(ratings) !== TOTAL_QUESTIONS) {
-    return Response.redirect(new URL(`/a/${id}/results`, _request.url), 303);
+    return Response.redirect(new URL("/check", _request.url), 303);
   }
 
   const results = byPriority(allDomainResults(ratings));
