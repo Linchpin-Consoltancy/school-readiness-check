@@ -9,7 +9,7 @@ import {
   useSyncExternalStore,
   useTransition,
 } from "react";
-import { submitAssessment } from "@/app/actions";
+import { z } from "zod";
 import { DOMAINS, TOTAL_QUESTIONS } from "@/content/assessment";
 import {
   CAPTURE_INDEX,
@@ -18,8 +18,10 @@ import {
   firstUnansweredIndex,
   questionAt,
 } from "@/lib/experience";
+import { recordAnonymous } from "@/lib/submissions";
+import { contextSchema } from "@/lib/profile";
 import { allDomainResults, type DomainResult } from "@/lib/scoring";
-import { CaptureScreen, EMPTY_PROFILE, type ProfileDraft } from "./CaptureScreen";
+import { CaptureScreen, EMPTY_CONTEXT, type ContextDraft } from "./CaptureScreen";
 import { Frame } from "./Frame";
 import { ResultsScreen } from "./ResultsScreen";
 import { DomainScreen, IntroScreen, QuestionScreen } from "./screens";
@@ -28,20 +30,22 @@ import { DomainScreen, IntroScreen, QuestionScreen } from "./screens";
  *  Long enough to see the choice register, short enough to feel instant. */
 const ADVANCE_DELAY_MS = 260;
 
-const STORAGE_KEY = "linchpin.readiness.v1";
+// Bumped when the shape below changed, so a half finished session saved
+// under the old shape is ignored rather than half restored.
+const STORAGE_KEY = "linchpin.readiness.v2";
 
 /** Everything worth remembering between visits, held together so it can be
  *  restored in one move. */
 type Session = {
   stepIndex: number;
   answers: Record<string, number>;
-  profile: ProfileDraft;
+  context: ContextDraft;
 };
 
 const NEW_SESSION: Session = {
   stepIndex: 0,
   answers: {},
-  profile: EMPTY_PROFILE,
+  context: EMPTY_CONTEXT,
 };
 
 /** Browser storage never changes underneath us, so there is nothing to
@@ -73,7 +77,7 @@ function parseSession(raw: string | null): Session | null {
         typeof parsed.answers === "object" && parsed.answers !== null
           ? (parsed.answers as Record<string, number>)
           : {},
-      profile: { ...EMPTY_PROFILE, ...(parsed.profile ?? {}) },
+      context: { ...EMPTY_CONTEXT, ...(parsed.context ?? {}) },
     };
   } catch {
     return null;
@@ -112,10 +116,9 @@ export function Experience() {
   const session = touched ?? restoredSession;
 
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
-  const [assessmentId, setAssessmentId] = useState<string | null>(null);
   const [results, setResults] = useState<DomainResult[] | null>(null);
-  /** Once the results are on the server the browser copy must stay gone, or
-   *  a returning visitor would land back on the form and submit twice. */
+  /** Once the results are on screen the browser copy must stay gone, or a
+   *  returning visitor would land back on the form and start again. */
   const [submitted, setSubmitted] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -211,29 +214,30 @@ export function Experience() {
       return;
     }
 
-    const { profile, answers } = session;
+    const { context, answers } = session;
+    const parsed = contextSchema.safeParse({
+      ...context,
+      region: context.region.trim() === "" ? undefined : context.region,
+    });
+
+    if (!parsed.success) {
+      setErrors(z.flattenError(parsed.error).fieldErrors);
+      return;
+    }
+
+    const computed = allDomainResults(answers);
 
     startTransition(async () => {
-      const outcome = await submitAssessment(
-        {
-          ...profile,
-          region: profile.region.trim() === "" ? undefined : profile.region,
-        },
-        answers,
-      );
-
-      if (!outcome.ok) {
-        setErrors(outcome.errors);
-        return;
-      }
+      // The anonymous record is ours, not theirs. If it fails to send, the
+      // results still appear exactly as they would have.
+      await recordAnonymous(parsed.data, answers, computed);
 
       setSubmitted(true);
-      setAssessmentId(outcome.assessmentId);
-      setResults(allDomainResults(answers));
+      setResults(computed);
       setSession((current) => ({ ...current, stepIndex: RESULTS_INDEX }));
 
-      // Safely on the server now, so the browser copy goes, which stops a
-      // stale one being restored on a later visit.
+      // Nothing is held anywhere else, so the browser copy goes once the
+      // results are on screen rather than being restored on a later visit.
       clearSession();
     });
   }
@@ -241,7 +245,6 @@ export function Experience() {
   function restart() {
     clearSession();
     setErrors({});
-    setAssessmentId(null);
     setResults(null);
     setSubmitted(false);
     setTouched(NEW_SESSION);
@@ -282,28 +285,36 @@ export function Experience() {
       case "capture":
         return (
           <CaptureScreen
-            profile={session.profile}
+            context={session.context}
             errors={errors}
             pending={pending}
-            onChange={(profile) =>
-              setSession((current) => ({ ...current, profile }))
+            onChange={(context) =>
+              setSession((current) => ({ ...current, context }))
             }
             onSubmit={submit}
             onBack={() => goTo(session.stepIndex - 1)}
           />
         );
 
-      case "results":
-        if (!results || !assessmentId) return null;
+      case "results": {
+        if (!results) return null;
+        const parsed = contextSchema.safeParse({
+          ...session.context,
+          region:
+            session.context.region.trim() === ""
+              ? undefined
+              : session.context.region,
+        });
+        if (!parsed.success) return null;
         return (
           <ResultsScreen
-            schoolName={session.profile.schoolName}
-            firstName={session.profile.fullName.trim().split(/\s+/)[0]}
+            context={parsed.data}
+            answers={session.answers}
             results={results}
-            assessmentId={assessmentId}
             onRestart={restart}
           />
         );
+      }
     }
   }
 

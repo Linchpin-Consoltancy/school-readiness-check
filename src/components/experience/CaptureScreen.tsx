@@ -4,20 +4,14 @@ import { useRef, useState } from "react";
 import { ENROLMENT_BANDS, SCHOOL_TYPES } from "@/lib/profile";
 import { eyebrowText, primaryButton, quietButton } from "./ui";
 
-export type ProfileDraft = {
-  fullName: string;
-  email: string;
-  phone: string;
+export type ContextDraft = {
   schoolName: string;
   schoolType: string;
   enrolment: string;
   region: string;
 };
 
-export const EMPTY_PROFILE: ProfileDraft = {
-  fullName: "",
-  email: "",
-  phone: "",
+export const EMPTY_CONTEXT: ContextDraft = {
   schoolName: "",
   schoolType: "",
   enrolment: "",
@@ -77,17 +71,17 @@ function Field({
 }
 
 export function CaptureScreen({
-  profile,
+  context,
   errors,
   pending,
   onChange,
   onSubmit,
   onBack,
 }: {
-  profile: ProfileDraft;
+  context: ContextDraft;
   errors: Record<string, string[] | undefined>;
   pending: boolean;
-  onChange: (next: ProfileDraft) => void;
+  onChange: (next: ContextDraft) => void;
   onSubmit: () => void;
   onBack: () => void;
 }) {
@@ -97,8 +91,8 @@ export function CaptureScreen({
   const errorFor = (field: string) =>
     corrected.has(field) ? undefined : errors[field]?.[0];
 
-  const set = (field: keyof ProfileDraft, value: string) => {
-    onChange({ ...profile, [field]: value });
+  const set = (field: keyof ContextDraft, value: string) => {
+    onChange({ ...context, [field]: value });
     setCorrected((previous) =>
       previous.has(field) ? previous : new Set(previous).add(field),
     );
@@ -112,13 +106,14 @@ export function CaptureScreen({
       <p className={eyebrowText}>Your results are ready</p>
 
       <h1 className="mt-6 font-display text-[2.1rem] leading-[1.12] font-normal text-onyx sm:text-[2.7rem]">
-        Where should we send them?
+        Which school are we looking at?
       </h1>
 
       <p className="mt-6 max-w-[50ch] text-[0.98rem] leading-[1.75] text-charcoal/85">
-        Your scores are worked out and waiting. Tell us who you are so we can
-        put your school on the report and get a copy to you. One follow up from
-        us, and nothing else. We do not sell or share your details.
+        Your scores are worked out and waiting. These last few details put your
+        school on the report and let us read the figures against schools of a
+        similar size and phase. We are not asking who you are, and you do not
+        need to tell us to see your results.
       </p>
 
       <form
@@ -140,19 +135,6 @@ export function CaptureScreen({
           </p>
         ) : null}
 
-        <Field name="fullName" label="Your name" error={errorFor("fullName")}>
-          <input
-            id="fullName"
-            name="fullName"
-            type="text"
-            autoComplete="name"
-            value={profile.fullName}
-            onChange={(event) => set("fullName", event.target.value)}
-            aria-invalid={Boolean(errorFor("fullName"))}
-            aria-describedby={describedBy("fullName")}
-            className={control(Boolean(errorFor("fullName")))}
-          />
-        </Field>
 
         <Field name="schoolName" label="School name" error={errorFor("schoolName")}>
           <input
@@ -160,7 +142,7 @@ export function CaptureScreen({
             name="schoolName"
             type="text"
             autoComplete="organization"
-            value={profile.schoolName}
+            value={context.schoolName}
             onChange={(event) => set("schoolName", event.target.value)}
             aria-invalid={Boolean(errorFor("schoolName"))}
             aria-describedby={describedBy("schoolName")}
@@ -168,44 +150,13 @@ export function CaptureScreen({
           />
         </Field>
 
-        <Field name="email" label="Email" error={errorFor("email")}>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            autoCapitalize="none"
-            spellCheck={false}
-            value={profile.email}
-            onChange={(event) => set("email", event.target.value)}
-            aria-invalid={Boolean(errorFor("email"))}
-            aria-describedby={describedBy("email")}
-            className={control(Boolean(errorFor("email")))}
-          />
-        </Field>
 
-        <Field name="phone" label="Phone or WhatsApp" error={errorFor("phone")}>
-          <input
-            id="phone"
-            name="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="07XX XXX XXX"
-            value={profile.phone}
-            onChange={(event) => set("phone", event.target.value)}
-            aria-invalid={Boolean(errorFor("phone"))}
-            aria-describedby={describedBy("phone")}
-            className={control(Boolean(errorFor("phone")))}
-          />
-        </Field>
 
         <Field name="schoolType" label="Your school covers" error={errorFor("schoolType")}>
           <select
             id="schoolType"
             name="schoolType"
-            value={profile.schoolType}
+            value={context.schoolType}
             onChange={(event) => set("schoolType", event.target.value)}
             aria-invalid={Boolean(errorFor("schoolType"))}
             aria-describedby={describedBy("schoolType")}
@@ -224,7 +175,7 @@ export function CaptureScreen({
           <select
             id="enrolment"
             name="enrolment"
-            value={profile.enrolment}
+            value={context.enrolment}
             onChange={(event) => set("enrolment", event.target.value)}
             aria-invalid={Boolean(errorFor("enrolment"))}
             aria-describedby={describedBy("enrolment")}
@@ -245,7 +196,7 @@ export function CaptureScreen({
             name="region"
             type="text"
             autoComplete="address-level1"
-            value={profile.region}
+            value={context.region}
             onChange={(event) => set("region", event.target.value)}
             aria-invalid={Boolean(errorFor("region"))}
             aria-describedby={describedBy("region")}

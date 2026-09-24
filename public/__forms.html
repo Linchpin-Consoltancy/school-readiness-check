@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Form definitions</title>
+  </head>
+  <body>
+    <!--
+      Netlify only recognises forms it finds in static HTML at deploy time.
+      Pages rendered by Next.js are not static, so their form tags are never
+      seen. This file exists only to be scanned. Nobody visits it, and the
+      submissions are sent here by fetch from the live pages.
+
+      Field names must match exactly what is posted. A name that is not
+      listed here is silently dropped.
+    -->
+
+    <!-- Anonymous benchmark record. No name, no school, no contact. -->
+    <form name="readiness-anon" data-netlify="true" hidden>
+      <input type="hidden" name="form-name" value="readiness-anon" />
+      <input name="schoolType" type="text" />
+      <input name="enrolment" type="text" />
+      <input name="region" type="text" />
+      <input name="D01-A" type="text" />
+      <input name="D01-B" type="text" />
+      <input name="D01-C" type="text" />
+      <input name="D02-A" type="text" />
+      <input name="D02-B" type="text" />
+      <input name="D02-C" type="text" />
+      <input name="D03-A" type="text" />
+      <input name="D03-B" type="text" />
+      <input name="D03-C" type="text" />
+      <input name="D04-A" type="text" />
+      <input name="D04-B" type="text" />
+      <input name="D04-C" type="text" />
+      <input name="D05-A" type="text" />
+      <input name="D05-B" type="text" />
+      <input name="D05-C" type="text" />
+      <input name="D06-A" type="text" />
+      <input name="D06-B" type="text" />
+      <input name="D06-C" type="text" />
+      <input name="D07-A" type="text" />
+      <input name="D07-B" type="text" />
+      <input name="D07-C" type="text" />
+      <input name="D01" type="text" />
+      <input name="D02" type="text" />
+      <input name="D03" type="text" />
+      <input name="D04" type="text" />
+      <input name="D05" type="text" />
+      <input name="D06" type="text" />
+      <input name="D07" type="text" />
+    </form>
+
+    <!-- A director who asked to be contacted. Only sent when consent is ticked. -->
+    <form name="readiness-lead" data-netlify="true" hidden>
+      <input type="hidden" name="form-name" value="readiness-lead" />
+      <input name="fullName" type="text" />
+      <input name="phone" type="text" />
+      <input name="email" type="text" />
+      <input name="consent" type="text" />
+      <input name="schoolName" type="text" />
+      <input name="schoolType" type="text" />
+      <input name="enrolment" type="text" />
+      <input name="region" type="text" />
+      <input name="D01" type="text" />
+      <input name="D02" type="text" />
+      <input name="D03" type="text" />
+      <input name="D04" type="text" />
+      <input name="D05" type="text" />
+      <input name="D06" type="text" />
+      <input name="D07" type="text" />
+      <input name="lowestDomain" type="text" />
+    </form>
+  </body>
+</html>

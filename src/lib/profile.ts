@@ -1,7 +1,15 @@
 import { z } from "zod";
 
 /* ---------------------------------------------------------------------------
-   What the capture form collects.
+   Two separate things are collected, and the split matters.
+
+   The school context is asked for before the results appear. It describes an
+   institution, not a person, so it carries no data protection weight and can
+   safely be required.
+
+   The contact details are offered afterwards, once the director already has
+   their results and owes us nothing. They are optional throughout, and are
+   only ever stored alongside an explicit tick of the consent box.
 
    These live here rather than beside the server action because a file marked
    "use server" may only export async functions. Anything else exported from
@@ -23,35 +31,9 @@ export const ENROLMENT_BANDS = [
   "Over 1000 learners",
 ] as const;
 
-/**
- * Kenyan numbers arrive in many shapes: 0712..., +254 712..., 254712...
- * All are accepted and stored as typed. The only thing rejected is something
- * that could not be a phone number at all.
- */
-const phoneSchema = z
-  .string()
-  .trim()
-  .min(7, "Please enter a number we can reach you on.")
-  .max(24, "That number is longer than we can store.")
-  .refine(
-    (value) => (value.match(/\d/g) ?? []).length >= 7,
-    "Please enter a number we can reach you on.",
-  );
+/* --- the school ---------------------------------------------------------- */
 
-export const profileSchema = z.object({
-  fullName: z
-    .string()
-    .trim()
-    .min(2, "Please enter your name.")
-    .max(120, "That name is longer than we can store."),
-  email: z
-    .string()
-    .trim()
-    .min(1, "Please enter your email address.")
-    .max(254, "That email address is longer than we can store.")
-    .toLowerCase()
-    .pipe(z.email("Please enter a valid email address.")),
-  phone: phoneSchema,
+export const contextSchema = z.object({
   schoolName: z
     .string()
     .trim()
@@ -71,8 +53,65 @@ export const profileSchema = z.object({
     .transform((value) => (value ? value : undefined)),
 });
 
-export type Profile = z.infer<typeof profileSchema>;
+export type SchoolContext = z.infer<typeof contextSchema>;
+
+/* --- the person ---------------------------------------------------------- */
+
+/**
+ * Kenyan numbers arrive in many shapes: 0712..., +254 712..., 254712...
+ * All are accepted and stored as typed. The only thing rejected is something
+ * that could not be a phone number at all.
+ */
+const phoneSchema = z
+  .string()
+  .trim()
+  .min(7, "Please enter a number we can reach you on.")
+  .max(24, "That number is longer than we can store.")
+  .refine(
+    (value) => (value.match(/\d/g) ?? []).length >= 7,
+    "Please enter a number we can reach you on.",
+  );
+
+/**
+ * Email is the second way to reach someone, not the first. A director who
+ * gives a WhatsApp number and leaves this blank is a complete record.
+ */
+const optionalEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254, "That email address is longer than we can store.")
+  .refine(
+    (value) => value === "" || z.email().safeParse(value).success,
+    "Please enter a valid email address.",
+  )
+  .transform((value) => (value === "" ? undefined : value));
+
+export const contactSchema = z.object({
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "Please enter your name.")
+    .max(120, "That name is longer than we can store."),
+  phone: phoneSchema,
+  email: optionalEmailSchema,
+  /** The consent record. Nothing is written unless this is true. */
+  consent: z
+    .boolean()
+    .refine(
+      (value) => value === true,
+      "Please tick the box so we know we may contact you.",
+    ),
+});
+
+export type Contact = z.infer<typeof contactSchema>;
+
+/* --- what the actions hand back ------------------------------------------ */
+
+type Errors = Record<string, string[] | undefined>;
 
 export type SubmitResult =
   | { ok: true; assessmentId: string }
-  | { ok: false; errors: Record<string, string[] | undefined> };
+  | { ok: false; errors: Errors };
+
+export type ContactResult = { ok: true } | { ok: false; errors: Errors };

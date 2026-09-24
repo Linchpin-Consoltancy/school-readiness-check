@@ -279,7 +279,6 @@ const styles = StyleSheet.create({
 
 export type ReportData = {
   schoolName: string;
-  principalName: string;
   schoolType: string;
   enrolment: string;
   region: string | null;
@@ -476,7 +475,6 @@ export function ReportDocument({ data }: { data: ReportData }) {
         </View>
 
         <View style={styles.metaGrid}>
-          <MetaCell label="Principal" value={data.principalName} />
           <MetaCell label="Assessment date" value={data.assessmentDate} />
           <MetaCell label="School type" value={data.schoolType} />
           <MetaCell label="Approximate enrolment" value={data.enrolment} />
