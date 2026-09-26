@@ -140,7 +140,9 @@
     .hero-actions {
       display: flex;
       align-items: center;
-      gap: 2rem;
+      /* Three items now sit here, so they wrap rather than overflow a phone. */
+      flex-wrap: wrap;
+      gap: 1rem 2rem;
       margin-top: 2.5rem;
       opacity: 0;
       transform: translateY(14px);
@@ -584,6 +586,66 @@
       margin-top: 0.5rem;
     }
 
+    /* ── TEAM ── */
+    .team {
+      padding: 6rem 5%;
+      background: var(--parch);
+    }
+    .team .section-heading { margin-bottom: 3rem; }
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2.5rem;
+      align-items: start;
+    }
+    /* One person should not stretch across the whole page. */
+    .team-grid:has(.team-card:only-child) { grid-template-columns: minmax(280px, 420px); }
+    .team-card {
+      background: var(--ivory);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .team-card:hover { border-color: var(--amber); transform: translateY(-3px); }
+    .team-photo {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      overflow: hidden;
+      background: var(--parch-dk);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .team-initials {
+      font-family: var(--font-cormorant), Georgia, serif;
+      font-size: 3rem;
+      letter-spacing: 0.06em;
+      color: var(--amber);
+    }
+    .team-name {
+      font-family: var(--font-cormorant), Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      color: var(--onyx);
+      margin: 0;
+    }
+    .team-role {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--amber);
+      margin: 0.5rem 0 1.25rem;
+    }
+    .team-bio {
+      font-size: 0.92rem;
+      line-height: 1.75;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .team-bio:last-child { margin-bottom: 0; }
+
     @media (max-width: 920px) {
       .hero { grid-template-columns: 1fr; min-height: auto; }
       .hero-right { display: none; }
@@ -592,6 +654,7 @@
       .process-steps { grid-template-columns: 1fr; gap: 3rem; }
       .process-steps::before { display: none; }
       .about { grid-template-columns: 1fr; gap: 3rem; }
+      .team-grid { grid-template-columns: 1fr; }
     }
 
 /* ===========================================================================

@@ -15,6 +15,47 @@ import { SiteMotion } from "./SiteMotion";
    The look of this page lives in site.css next to this file.
    =========================================================================== */
 
+/* ===========================================================================
+   THE TEAM
+   ===========================================================================
+
+   To add someone, copy one whole block from { to } below, paste it after the
+   last one, and fill in the four lines. Order on the page follows order here.
+
+   photo  A picture file placed in public/site/, written as "/site/name.jpg".
+          Write null instead and the card shows their initials, which looks
+          deliberate rather than unfinished. Portraits work best.
+   bio    One or more paragraphs. Each pair of quote marks is one paragraph.
+   =========================================================================== */
+
+type TeamMember = {
+  name: string;
+  role: string;
+  photo: string | null;
+  bio: string[];
+};
+
+const TEAM: TeamMember[] = [
+  {
+    name: "Joseph Omondi",
+    role: "Founder",
+    photo: "/site/joseph-omondi.jpg",
+    bio: [
+      "An educator and school systems specialist with a decade of experience working in and with schools. Joseph has served as a classroom teacher, a Dean of Instruction and Learning, and a specialist in learning design and innovation.",
+      "As a trainer and coach, he has worked alongside school leaders, middle tier Education Officers, and school clusters to build the capacity to deliver more effectively, implementing programmes and educational projects across the country in the process.",
+    ],
+  },
+];
+
+function initialsOf(name: string) {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0] ?? "")
+    .join("")
+    .toUpperCase();
+}
+
 export default function SitePage() {
   return (
     <>
@@ -53,6 +94,7 @@ export default function SitePage() {
           <div className="hero-actions">
             <a href="#contact" className="btn-primary">Get in Touch</a>
             <a href="#services" className="hero-scroll">See How We Work &darr;</a>
+            <a href="#team" className="hero-scroll">Meet the Team &darr;</a>
           </div>
           <div className="hero-rule"></div>
         </div>
@@ -61,7 +103,7 @@ export default function SitePage() {
             <div className="hero-img-frame">
               <Image
                 src="/site/joseph-omondi.jpg"
-                alt="Joseph Omondi, Founder of Linchpin Education"
+                alt="Linchpin Education, school systems consultancy in Kenya"
                 fill
                 priority
                 sizes="(max-width: 920px) 100vw, 40vw"
@@ -77,7 +119,6 @@ export default function SitePage() {
                 <path d="M27 56 L40 70" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
               </svg>
             </div>
-            <div className="hero-img-tag">Joseph Omondi &nbsp; Founder</div>
           </div>
         </div>
       </section>
@@ -169,22 +210,42 @@ export default function SitePage() {
           <p className="section-label reveal">About</p>
           <h2 className="section-heading reveal">Linchpin<br />Education</h2>
           <div className="about-rule reveal"></div>
-          <div className="about-photo reveal">
-            <Image
-              src="/site/joseph-omondi.jpg"
-              alt="Joseph Omondi, Founder of Linchpin Education"
-              fill
-              sizes="(max-width: 920px) 100vw, 40vw"
-              style={{ objectFit: "cover", objectPosition: "center top" }}
-            />
-          </div>
-          <p className="about-photo-caption reveal"><span>Joseph Omondi</span> &nbsp; Founder, Linchpin Education</p>
         </div>
         <div className="about-right">
-          <p className="reveal">Linchpin Education was founded by <strong>Joseph Omondi</strong>, an educator and school systems specialist with a decade of experience working in and with schools. Joseph has served as a classroom teacher, a Dean of Instruction and Learning, and a specialist in learning design and innovation.</p>
-          <p className="reveal">As a trainer and coach, he has worked alongside school leaders, middle tier Education Officers, and school clusters to build the capacity to deliver more effectively, implementing programmes and educational projects across the country in the process.</p>
+          <p className="reveal">Linchpin Education was built out of a decade spent inside schools, in classrooms, in leadership offices, and alongside school clusters and Education Officers across the country.</p>
           <p className="reveal">That breadth of experience produced one enduring conviction: most school improvement efforts fall short not because of insufficient effort or commitment, but because the underlying systems are not designed to guarantee quality. When the right structures are in place, effective leadership becomes sustainable and consistent learning becomes a natural outcome rather than an exception.</p>
-          <p className="reveal">Linchpin Education exists to build those structures, with each school and for each school. Our work is grounded in ten years of direct experience within schools, a track record of designing systems from scratch across multiple school contexts, and a history of coaching school leaders and their teams to take genuine, lasting ownership of quality.</p>
+          <p className="reveal">Linchpin Education exists to build those structures, with each school and for each school. Our work is grounded in direct experience within schools, a track record of designing systems from scratch across multiple school contexts, and a history of coaching school leaders and their teams to take genuine, lasting ownership of quality.</p>
+          <p className="reveal">We work as a small, deliberately hands on team. The people who scope your diagnostic are the people who sit in your classrooms and write your roadmap.</p>
+        </div>
+      </section>
+
+      {/* TEAM */}
+      <section className="team" id="team">
+        <p className="section-label reveal">The People</p>
+        <h2 className="section-heading reveal">Who You Will Work With</h2>
+        <div className="team-grid">
+          {TEAM.map((member) => (
+            <article className="team-card reveal" key={member.name}>
+              <div className="team-photo">
+                {member.photo ? (
+                  <Image
+                    src={member.photo}
+                    alt={`${member.name}, ${member.role} at Linchpin Education`}
+                    fill
+                    sizes="(max-width: 920px) 100vw, 30vw"
+                    style={{ objectFit: "cover", objectPosition: "center top" }}
+                  />
+                ) : (
+                  <span className="team-initials">{initialsOf(member.name)}</span>
+                )}
+              </div>
+              <h3 className="team-name">{member.name}</h3>
+              <p className="team-role">{member.role}</p>
+              {member.bio.map((paragraph) => (
+                <p className="team-bio" key={paragraph.slice(0, 40)}>{paragraph}</p>
+              ))}
+            </article>
+          ))}
         </div>
       </section>
 
